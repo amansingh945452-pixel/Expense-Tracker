@@ -1,188 +1,251 @@
 # Personal Expense Tracker
 
-Full-stack expense tracker: **Next.js (TypeScript, Tailwind v4, shadcn/ui)** frontend,
-**Flask** REST API, **MySQL** database.
+A modern, full-stack personal finance and expense tracking web dashboard with real-time analytics and category breakdowns.
 
-```
-expense-tracker/
+![Status](https://img.shields.io/badge/status-active-success)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Tech Stack](#tech-stack)
+- [Architecture & File Structure](#architecture--file-structure)
+- [Backend API Reference](#backend-api-reference)
+- [Setup Instructions](#setup-instructions)
+  - [1. Database Setup](#1-database-setup)
+  - [2. Backend Setup](#2-backend-setup)
+  - [3. Frontend Setup](#3-frontend-setup)
+- [Environment Variables](#environment-variables)
+- [Roadmap & Architecture Notes](#roadmap--architecture-notes)
+- [License](#license)
+
+---
+
+## Overview
+
+**Personal Expense Tracker** is a self-hosted dashboard for tracking personal income and expenses. It provides real-time visual analytics, category-based spending breakdowns, and a clean interface for logging and reviewing transactions. Transactions are classified using a relational MySQL schema with `ENUM` cost types to distinguish **fixed** (e.g. rent, subscriptions) from **variable** (e.g. dining, entertainment) spending.
+
+## Tech Stack
+
+| Layer      | Technology                                                                 |
+|------------|-----------------------------------------------------------------------------|
+| Frontend   | Next.js (App Router, TypeScript), Tailwind CSS, shadcn/ui, Recharts, Framer Motion |
+| Backend    | Python, Flask (REST API), PyMySQL, DBUtils (`PooledDB`)                    |
+| Database   | MySQL                                                                        |
+
+---
+
+## Architecture & File Structure
+
+```text
+personal-expense-tracker/
 ├── database/
-│   └── schema.sql                # CREATE TABLE scripts + seed data
+│   └── schema.sql                  # Table definitions, ENUM types, and seed data
+│
 ├── backend/
-│   ├── app.py                    # Flask API & route handlers
-│   ├── db.py                     # PooledDB + PyMySQL connection pool
-│   ├── requirements.txt          # Python dependencies
-│   └── .env.example              # Template for DB credentials & CORS origins
+│   ├── app.py                      # Flask app entrypoint & API routes
+│   ├── db.py                       # MySQL connection pool (PyMySQL + DBUtils PooledDB)
+│   ├── requirements.txt            # Python dependencies
+│   └── .env.example                # Sample backend environment variables
+│
 ├── frontend/
 │   ├── app/
-│   │   ├── favicon.ico
-│   │   ├── globals.css           # Tailwind CSS directives & theme variables
-│   │   ├── layout.tsx            # Root layout wrapper
-│   │   └── page.tsx              # Main page rendering <Dashboard />
+│   │   ├── layout.tsx              # Root layout (fonts, providers, metadata)
+│   │   ├── page.tsx                # Main dashboard entry page
+│   │   └── globals.css             # Tailwind base styles & CSS variables
+│   │
 │   ├── components/
-│   │   ├── Dashboard.tsx         # Central state manager & layout coordinator
-│   │   ├── SpendingChart.tsx     # Recharts spending donut breakdown
-│   │   ├── TransactionForm.tsx   # Add transaction form with fixed/variable toggles
-│   │   ├── CloudShader.tsx       # Custom background shader wrapper
+│   │   ├── Dashboard.tsx           # Top-level dashboard composition
+│   │   ├── SpendingChart.tsx       # Recharts category/time spending visualization
+│   │   ├── TransactionForm.tsx     # Add/edit transaction form
+│   │   ├── CloudShader.tsx         # Decorative animated background shader
 │   │   └── ui/
-│   │       ├── apple-cards-carousel.tsx  # Carousel & Card components
-│   │       ├── layout-text-flip.tsx      # Animated rotating header titles
-│   │       └── loader.tsx                # LoaderOne animated spinner
+│   │       ├── apple-cards-carousel.tsx  # shadcn-style animated card carousel
+│   │       ├── layout-text-flip.tsx      # Animated flipping text component
+│   │       └── loader.tsx                # Loading state indicator
+│   │
 │   ├── lib/
-│   │   └── api.ts                # Fetch client (transactions, categories, summary, delete)
+│   │   ├── api.ts                  # Typed fetch wrapper for backend REST calls
+│   │   └── utils.ts                # Utility helpers (cn, formatters, etc.)
+│   │
 │   ├── types/
-│   │   └── index.ts              # TypeScript interfaces (Transaction, Category, Summary)
+│   │   └── index.ts                # Shared TypeScript types/interfaces
+│   │
+│   ├── components.json             # shadcn/ui configuration
 │   ├── package.json
-│   ├── tsconfig.json
-│   └── tailwind.config.ts
-├── .gitignore                    # Ignores venv, node_modules, .next, and backend/.env
+│   └── tsconfig.json
+│
+├── .gitignore
 └── README.md
 ```
 
 ---
 
-## 1. Database (MySQL)
+## Backend API Reference
 
-```bash
-mysql -u root -p < database/schema.sql
-```
+Base URL (local development): `http://localhost:5000`
 
-This creates the `expense_tracker` database with `users`, `categories`,
-`transactions`, a demo user, and 10 default categories. `cost_type` on
-`transactions` is the `ENUM('fixed','variable')` column that drives the
-Fixed vs. Variable classification.
+| Method   | Endpoint                  | Purpose                                              |
+|----------|----------------------------|-------------------------------------------------------|
+| `GET`    | `/api/health`              | Health check — confirms the API and DB pool are up   |
+| `GET`    | `/api/categories`          | Fetch the list of available expense categories        |
+| `POST`   | `/api/transactions`        | Add a new transaction                                  |
+| `GET`    | `/api/transactions`        | Fetch transactions (supports pagination & filtering)   |
+| `DELETE` | `/api/transactions/<id>`   | Delete a transaction by its ID                         |
+| `GET`    | `/api/summary`             | Aggregate spending by category and compute totals      |
 
----
-
-## 2. Backend (Flask)
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-cp .env.example .env
-# edit .env with your MySQL credentials
-
-python app.py                   # runs on http://localhost:5000
-```
-
-Verify it's up:
-
-```bash
-curl http://localhost:5000/api/health
-```
-
-### Endpoints
-
-| Method | Path                | Purpose                                      |
-|--------|----------------------|-----------------------------------------------|
-| GET    | `/api/health`         | Healthcheck                                   |
-| GET    | `/api/categories`      | List categories (for the form dropdown)       |
-| POST   | `/api/transactions`    | Create a transaction                          |
-| GET    | `/api/transactions`    | Paginated transaction history (`limit`,`offset`, filters) |
-| GET    | `/api/summary`         | Spend by category + fixed/variable breakdown, for charts |
-
-Example create:
+### Example: `POST /api/transactions`
 
 ```bash
 curl -X POST http://localhost:5000/api/transactions \
   -H "Content-Type: application/json" \
   -d '{
-    "category_id": 1,
-    "amount": 42.50,
-    "transaction_date": "2026-09-15",
-    "description": "Weekly groceries",
-    "cost_type": "variable",
-    "transaction_type": "expense"
+    "description": "Monthly Netflix Subscription",
+    "amount": 15.99,
+    "category_id": 4,
+    "cost_type": "fixed",
+    "transaction_date": "2026-09-28"
   }'
 ```
 
+**Example response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 132,
+    "description": "Monthly Netflix Subscription",
+    "amount": 15.99,
+    "category_id": 4,
+    "cost_type": "fixed",
+    "transaction_date": "2026-09-28",
+    "created_at": "2026-09-28T10:15:32Z"
+  }
+}
+```
+
 ---
 
-## 3. Frontend (Next.js)
+## Setup Instructions
 
-### 3.1 Scaffold the project
+### 1. Database Setup
+
+Create the database and load the schema (tables + seed data):
 
 ```bash
-npx create-next-app@latest frontend \
-  --typescript --tailwind --app --eslint --src-dir=false --import-alias "@/*"
+mysql -u root -p -e "CREATE DATABASE expense_tracker;"
+mysql -u root -p expense_tracker < database/schema.sql
+```
+
+### 2. Backend Setup
+
+```bash
+cd backend
+```
+
+**Create a virtual environment:**
+
+macOS / Linux:
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Windows:
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+**Install dependencies:**
+
+```bash
+pip install -r requirements.txt
+```
+
+**Configure environment variables:**
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your MySQL credentials and app settings (see [Environment Variables](#environment-variables)).
+
+**Run the Flask server:**
+
+```bash
+flask run --port=5000
+```
+
+The API will be available at `http://localhost:5000`.
+
+### 3. Frontend Setup
+
+```bash
 cd frontend
+npm install
 ```
 
-> The files in this deliverable (`app/`, `components/`, `lib/`, `types/`)
-> are meant to be dropped into that scaffolded project, overwriting the
-> generated `app/page.tsx`, `app/layout.tsx`, and `app/globals.css`.
-
-Tailwind v4 note: `create-next-app` now installs Tailwind v4 by default,
-which is CSS-first (no `tailwind.config.js` needed) — config/tokens live
-in `app/globals.css` via `@theme`, as already set up in that file.
-
-### 3.2 Initialize shadcn/ui
+**Ensure required dependencies are installed:**
 
 ```bash
-npx shadcn@latest init
+npm install recharts framer-motion clsx tailwind-merge
 ```
 
-When prompted, accept the defaults so components resolve to:
+**Configure environment variables:**
 
-- Components → `@/components/ui`
-- Utils → `@/lib/utils`
-- Styles/global CSS → `app/globals.css`
-
-Then add the primitives this project uses:
+Create `frontend/.env.local`:
 
 ```bash
-npx shadcn@latest add button input select label card
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 ```
 
-### 3.3 Add your custom components
-
-Drop your existing files in:
-
-- `components/CloudShader.tsx`
-- `components/ui/layout-text-flip.tsx`
-- `components/ui/apple-cards-carousel.tsx` (exporting `Carousel` and `Card`)
-- `components/ui/loader.tsx` (exporting `LoaderOne`)
-- `components/ui/custom-button.tsx` (exporting `CustomButton`)
-
-`Dashboard.tsx` and `TransactionForm.tsx` import these by name — adjust
-the import paths/prop shapes to match your actual files if they differ.
-
-Install the remaining runtime deps:
+**Run the development server:**
 
 ```bash
-npm install recharts framer-motion
+npm run dev
 ```
 
-### 3.4 Point the frontend at the API
-
-```bash
-echo "NEXT_PUBLIC_API_BASE_URL=http://localhost:5000" > .env.local
-```
-
-### 3.5 Run it
-
-```bash
-npm run dev     # http://localhost:3000
-```
-
-With the Flask server running on port 5000 and MySQL up, the dashboard
-will fetch categories/summary/transactions on load, show `<LoaderOne>`
-while fetching, render the Recharts pie chart from `/api/summary`,
-list top categories in the `<Carousel>`, and let you submit new
-transactions through the glassmorphism form — which triggers a refetch
-of the chart and list.
+The app will be available at `http://localhost:3000`.
 
 ---
 
-## Notes / next steps for a production version
+## Environment Variables
 
-- Auth is stubbed out (`DEFAULT_USER_ID`) — swap in real sessions/JWT
-  and drop the `user_id` query param in favor of a server-derived value.
-- Add server-side validation/rate limiting in front of `POST /api/transactions`.
-- Consider a migration tool (Alembic, Flyway) instead of a single `schema.sql`
-  once the schema needs to evolve.
-- The `/api/summary` endpoint accepts `start`/`end` query params
-  (`YYYY-MM-DD`) already, so a date-range filter on the dashboard is a
-  frontend-only addition.
+**Backend (`backend/.env`):**
+
+```text
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=expense_tracker
+FLASK_ENV=development
+FLASK_APP=app.py
+```
+
+**Frontend (`frontend/.env.local`):**
+
+```text
+NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+```
+
+---
+
+## Roadmap & Architecture Notes
+
+Planned enhancements and architectural improvements:
+
+- **Authentication** — JWT- or session-based auth to support multi-user accounts and secure endpoints.
+- **API Hardening** — Server-side rate limiting and stricter request validation/schema enforcement.
+- **Database Migrations** — Adopt Alembic for versioned, repeatable schema migrations instead of static SQL scripts.
+- **Reporting** — CSV and PDF export of transaction history and category summaries.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
