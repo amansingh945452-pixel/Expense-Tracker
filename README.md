@@ -6,26 +6,36 @@ Full-stack expense tracker: **Next.js (TypeScript, Tailwind v4, shadcn/ui)** fro
 ```
 expense-tracker/
 ├── database/
-│   └── schema.sql            # CREATE TABLE scripts + seed data
+│   └── schema.sql                # CREATE TABLE scripts + seed data
 ├── backend/
-│   ├── app.py                 # Flask API (routes)
-│   ├── db.py                  # PyMySQL connection pool
-│   ├── requirements.txt
-│   └── .env.example
-└── frontend/
-    ├── app/
-    │   ├── layout.tsx
-    │   ├── page.tsx
-    │   └── globals.css
-    ├── components/
-    │   ├── Dashboard.tsx       # wires everything together
-    │   ├── TransactionForm.tsx
-    │   ├── SpendingChart.tsx
-    │   └── ui/                 # shadcn + your custom components live here
-    ├── lib/
-    │   └── api.ts              # fetch wrapper for the Flask API
-    └── types/
-        └── index.ts
+│   ├── app.py                    # Flask API & route handlers
+│   ├── db.py                     # PooledDB + PyMySQL connection pool
+│   ├── requirements.txt          # Python dependencies
+│   └── .env.example              # Template for DB credentials & CORS origins
+├── frontend/
+│   ├── app/
+│   │   ├── favicon.ico
+│   │   ├── globals.css           # Tailwind CSS directives & theme variables
+│   │   ├── layout.tsx            # Root layout wrapper
+│   │   └── page.tsx              # Main page rendering <Dashboard />
+│   ├── components/
+│   │   ├── Dashboard.tsx         # Central state manager & layout coordinator
+│   │   ├── SpendingChart.tsx     # Recharts spending donut breakdown
+│   │   ├── TransactionForm.tsx   # Add transaction form with fixed/variable toggles
+│   │   ├── CloudShader.tsx       # Custom background shader wrapper
+│   │   └── ui/
+│   │       ├── apple-cards-carousel.tsx  # Carousel & Card components
+│   │       ├── layout-text-flip.tsx      # Animated rotating header titles
+│   │       └── loader.tsx                # LoaderOne animated spinner
+│   ├── lib/
+│   │   └── api.ts                # Fetch client (transactions, categories, summary, delete)
+│   ├── types/
+│   │   └── index.ts              # TypeScript interfaces (Transaction, Category, Summary)
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── tailwind.config.ts
+├── .gitignore                    # Ignores venv, node_modules, .next, and backend/.env
+└── README.md
 ```
 
 ---
