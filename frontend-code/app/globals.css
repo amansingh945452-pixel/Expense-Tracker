@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Tailwind v4 uses CSS-first config. Add design tokens here instead of
+   tailwind.config.js if you want custom colors/fonts for the theme. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
